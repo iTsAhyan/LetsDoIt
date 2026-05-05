@@ -1,0 +1,29 @@
+name: Ahyan Creations Video Engine
+on:
+  push:
+    paths:
+      - 'script.txt' # শুধু এই ফাইল আপডেট হলেই ভিডিও রেন্ডার শুরু হবে
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          pip install edge-tts requests huggingface_hub moviepy
+
+      - name: Run Video Engine
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          PEXELS_KEY: ${{ secrets.PEXELS_KEY }}
+        run: python app.py
