@@ -3,12 +3,17 @@ from moviepy.editor import *
 import edge_tts
 from huggingface_hub import HfApi
 
+# সরাসরি এখানে আপনার টোকেন দিন [আব্দুল্লাহ ভাই স্পেশাল]
+HF_TOKEN = "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"
+PEXELS_KEY = "eEyJWXVZVHpFG02t8Nso0dgb1YEkW7WAXOc7y0WV76Gv1u6N9bCUzFxO"
+REPO_ID = "AhyanCreationsLTD/coldcasevid"
+
 async def render():
-    hf_token = os.getenv("HF_TOKEN")
-    pexels_key = os.getenv("PEXELS_KEY")
-    repo_id = "AhyanCreationsLTD/coldcasevid"
-    
-    # script.txt থেকে আপনার স্টোরি পড়বে
+    # script.txt থেকে স্টোরি পড়বে
+    if not os.path.exists("script.txt"):
+        print("❌ script.txt ফাইলটি খুঁজে পাওয়া যায়নি!")
+        return
+
     with open("script.txt", "r") as f:
         script = f.read()
 
@@ -18,13 +23,13 @@ async def render():
     await comm.save("voice.mp3")
     audio = AudioFileClip("voice.mp3")
 
-    # ২. ফুটেজ ডাউনলোড (Sequential Logic to save RAM)
+    # ২. ফুটেজ ডাউনলোড
     sentences = re.split(r'[,.!?]', script)
     keywords = [re.findall(r'\w+', s)[-1] for s in sentences if len(s.strip()) > 5]
     
     final_clips = []
     curr_time = 0
-    headers = {"Authorization": pexels_key}
+    headers = {"Authorization": PEXELS_KEY}
 
     print(f"🎬 {len(keywords)}টি ফুটেজ প্রসেস হচ্ছে...")
     for i, kw in enumerate(keywords[:120]): 
@@ -44,17 +49,18 @@ async def render():
             if i % 10 == 0: gc.collect()
         except: continue
 
-    # ৩. ফাইনাল অ্যাসেম্বলি
-    print("🎞️ রেন্ডারিং...")
+    # ৩. ফাইনাল রেন্ডারিং
+    print("🎞️ রেন্ডারিং চলছে...")
     final_video = concatenate_videoclips(final_clips, method="compose").set_audio(audio)
     output = "AHYAN_COLDCASE_FINAL.mp4"
     final_video.write_videofile(output, fps=24, bitrate="6000k", codec="libx264")
 
     # ৪. হাগিং ফেস-এ আপলোড
+    print("☁️ হাগিং ফেস-এ আপলোড হচ্ছে...")
     api = HfApi()
     api.upload_file(path_or_fileobj=output, path_in_repo=f"renders/{output}", 
-                    repo_id=repo_id, repo_type="dataset", token=hf_token)
-    print("🏆 মিশন সফল আব্দুল্লাহ ভাই!")
+                    repo_id=REPO_ID, repo_type="dataset", token=HF_TOKEN)
+    print("🏆 মিশন সফল আব্দুল্লাহ ভাই! আপনার ভিডিও রেডি।")
 
 if __name__ == "__main__":
     asyncio.run(render())
